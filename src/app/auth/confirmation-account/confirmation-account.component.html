@@ -1,0 +1,123 @@
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+      <div class="card verification-card shadow border-0">
+        <div class="card-body p-4 p-lg-5">
+          <h1 class="h4 mb-2 text-center">Vérification du compte</h1>
+
+          @if (isSmsFlow()) {
+          <p class="text-muted text-center mb-4">
+            Saisissez le code SMS à 6 chiffres reçu sur votre téléphone.
+          </p>
+
+          <form [formGroup]="smsCodeForm" (ngSubmit)="onSubmit()" novalidate>
+            <div class="sms-code-grid mb-3">
+              <input id="d1" type="text" inputmode="numeric" maxlength="1" class="form-control text-center"
+                formControlName="d1" (input)="onDigitInput($event, 'd2')" (keydown)="onBackspace($event)" />
+              <input id="d2" type="text" inputmode="numeric" maxlength="1" class="form-control text-center"
+                formControlName="d2" (input)="onDigitInput($event, 'd3')" (keydown)="onBackspace($event, 'd1')" />
+              <input id="d3" type="text" inputmode="numeric" maxlength="1" class="form-control text-center"
+                formControlName="d3" (input)="onDigitInput($event, 'd4')" (keydown)="onBackspace($event, 'd2')" />
+              <input id="d4" type="text" inputmode="numeric" maxlength="1" class="form-control text-center"
+                formControlName="d4" (input)="onDigitInput($event, 'd5')" (keydown)="onBackspace($event, 'd3')" />
+              <input id="d5" type="text" inputmode="numeric" maxlength="1" class="form-control text-center"
+                formControlName="d5" (input)="onDigitInput($event, 'd6')" (keydown)="onBackspace($event, 'd4')" />
+              <input id="d6" type="text" inputmode="numeric" maxlength="1" class="form-control text-center"
+                formControlName="d6" (input)="onDigitInput($event)" (keydown)="onBackspace($event, 'd5')" />
+            </div>
+
+            @if (smsCodeForm.touched && smsCodeForm.invalid) {
+          <div class="form-text text-danger text-center mb-3">
+            Entrez les 6 chiffres du code SMS.
+          </div>
+          }
+
+          <div class="countdown text-center mb-3" [class.expired]="countdown() === 0">
+            @if (countdown() > 0) {
+          Le code expire dans <strong>{{ countdown() }}s</strong>
+          } @else {
+          Code expiré.
+          }
+          </div>
+
+          <button
+              type="button"
+              class="btn btn-link p-0"
+              [disabled]="countdown() > 0 || loading()"
+              (click)="restartCountdown()"
+              >
+                @if (loading()) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+              Envoi...
+              } @else {
+              Renvoyer le code
+              }
+          </button>
+
+                    @if (error()) {
+          <div class="alert alert-danger" role="alert">{{ error() }}</div>
+          }
+
+          @if (success()) {
+          <div class="alert alert-success" role="alert">{{ success() }}</div>
+          }
+
+          <button
+              class="btn btn-primary w-100"
+              type="submit"
+              [disabled]="loading() || countdown() === 0"
+            >
+              @if (loading()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Vérification...
+              } @else {
+              Vérifier le code SMS
+              }
+          </button>
+                  </form>
+          } @else {
+          <p class="text-muted text-center mb-4">
+            Collez le token reçu par email pour activer votre compte.
+          </p>
+
+          <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+            <div class="mb-3">
+              <label for="token" class="form-label">Token de confirmation</label>
+              <input id="token" type="text" class="form-control" formControlName="token"
+                placeholder="Ex: token email" />
+              @if (form.controls.token.touched && form.controls.token.invalid) {
+          <div class="form-text text-danger">Le token est obligatoire.</div>
+          }
+          </div>
+
+          @if (error()) {
+          <div class="alert alert-danger" role="alert">{{ error() }}</div>
+          }
+
+          @if (success()) {
+          <div class="alert alert-success" role="alert">{{ success() }}</div>
+          }
+
+                <button
+                  class="btn btn-primary w-100"
+                  type="submit"
+                  [disabled]="loading()"
+                >
+                  @if (loading()) {
+                          <span class="spinner-border spinner-border-sm me-2"></span>
+                          Vérification...
+                          } @else {
+                          Vérifier le compte
+                }
+                </button>
+                  </form>
+          }
+
+          <div class="text-center mt-3">
+            <a routerLink="/login" class="small">Retour à la connexion</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

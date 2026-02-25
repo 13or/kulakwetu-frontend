@@ -1,0 +1,71 @@
+<div class="account-content">
+  <div class="login-wrapper login-new">
+    <div class="row w-100">
+      <div class="col-lg-5 mx-auto">
+        <div class="login-content user-login">
+          <div class="login-logo text-center mb-4">
+            <img src="assets/img/logo.png" alt="img" class="img-fluid" />
+            <a [routerLink]="routes.index" class="login-logo logo-white d-block mt-2">
+              <img src="assets/img/logo-white.svg" alt="Img" class="img-fluid" />
+            </a>
+          </div>
+
+          <form class="digit-group" (ngSubmit)="navigation()">
+            <div class="card">
+              <div class="card-body p-5">
+                <div class="login-userheading text-center mb-4">
+                  <h3>Vérification en deux étapes</h3>
+                  <h4>
+                    Entrez le code à usage unique envoyé à {{ maskedDestination }} pour confirmer votre compte.
+                  </h4>
+                </div>
+
+                <div class="text-center otp-input">
+                  <div class="d-flex align-items-center justify-content-center mb-3">
+                    <p-inputotp [length]="6" [autofocus]="true" [(ngModel)]="value" name="otpCode" />
+                  </div>
+
+                  <div>
+                    <div class="badge bg-danger-transparent mb-3">
+                      <p class="d-flex align-items-center mb-0">
+                        <i class="ti ti-clock me-1"></i>{{ countdownLabel }}
+                      </p>
+                    </div>
+
+                    <div class="mb-3 d-flex justify-content-center">
+                      <p class="text-gray-9 mb-0">
+                        Vous n'avez pas reçu le code à usage unique ?
+                        <a
+                          href="javascript:void(0);"
+                          class="text-primary"
+                          [class.disabled-link]="remainingSeconds > 0 || loading"
+                          (click)="resendCode()"
+                        >
+                          Renvoyer le code
+                        </a>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                @if (errorMessage) {
+                <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+                }
+
+                <div class="mb-0">
+                  <button type="submit" class="btn btn-primary w-100" [disabled]="loading">
+                    Vérifier et continuer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="my-4 d-flex justify-content-center align-items-center copyright-text">
+      <p>Copyright &copy; 2026 Agrisol group</p>
+    </div>
+  </div>
+</div>

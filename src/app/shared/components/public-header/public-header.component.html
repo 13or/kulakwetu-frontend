@@ -1,0 +1,67 @@
+<header class="pub-header">
+  <!-- TOP BAR -->
+  <div class="pub-topbar">
+    <div class="pub-container pub-topbar__inner">
+      <div class="pub-topbar__left">
+        <span class="pub-badge">🌱 100% Organic</span>
+        <span class="pub-topbar__text">Agriculture & Farming</span>
+      </div>
+
+      <div class="pub-topbar__right">
+        <span class="pub-topbar__text">📞 +243 000 000 000</span>
+        <span class="pub-dot">•</span>
+        <span class="pub-topbar__text">✉ contact@yourdomain.com</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVBAR -->
+  <div class="pub-navbar">
+    <div class="pub-container pub-navbar__inner">
+
+      <!-- LOGO -->
+      <a class="pub-logo" routerLink="/" (click)="closeMenu()">
+        <img src="assets/img/logo.png" alt="img">
+        <a routerLink="/" class="login-logo logo-white">
+          <img src="assets/img/logo.png"  alt="Img">
+        </a>
+      </a>
+
+      <!-- NAV LINKS -->
+      <nav class="pub-nav" [class.pub-nav--open]="isMenuOpen">
+        <a routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">Accueil</a>
+        <a routerLink="/about" routerLinkActive="is-active" (click)="closeMenu()">À propos</a>
+        <a routerLink="/services" routerLinkActive="is-active" (click)="closeMenu()">Services</a>
+        <a routerLink="/shop-products" routerLinkActive="is-active" (click)="closeMenu()">Produits</a>
+        <a routerLink="/contact" routerLinkActive="is-active" (click)="closeMenu()">Contact</a>
+
+        <!-- AUTH (mobile only) -->
+        <div class="pub-auth pub-auth--mobile">
+          <a routerLink="/login" class="pub-auth__login" (click)="closeMenu()">Connexion</a>
+          <a routerLink="/register" class="pub-auth__register" (click)="closeMenu()">Inscription</a>
+        </div>
+      </nav>
+
+      <!-- ACTIONS -->
+      <div class="pub-actions">
+
+        <!-- AUTH DESKTOP -->
+        <div class="pub-auth pub-auth--desktop">
+          <a routerLink="/login" class="pub-auth__login">Connexion</a>
+          <a routerLink="/register" class="pub-auth__register">Inscription</a>
+        </div>
+
+        <!-- CART -->
+        <a class="pub-cart" routerLink="/products" (click)="closeMenu()">
+          <span class="pub-cart__icon">🛒</span>
+          <span class="pub-cart__count" *ngIf="(cartCount$ | async) as c">{{ c }}</span>
+        </a>
+
+        <!-- BURGER -->
+        <button class="pub-burger" type="button" (click)="toggleMenu()" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>

@@ -1,0 +1,29 @@
+:host {
+  display: block;
+}
+
+.verification-card {
+  border-radius: 1rem;
+}
+
+.sms-code-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.sms-code-grid .form-control {
+  height: 3rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.countdown {
+  font-size: 0.95rem;
+  color: #6c757d;
+}
+
+.countdown.expired {
+  color: #dc3545;
+  font-weight: 600;
+}

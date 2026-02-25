@@ -1,0 +1,33 @@
+:host {
+  display: block;
+}
+
+.pass-group {
+  position: relative;
+
+  .toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+  }
+
+  .pass-input {
+    padding-right: 2.5rem;
+  }
+}
+
+.btn-login[disabled] {
+  opacity: .8;
+}
+
+input.ng-invalid.ng-touched,
+select.ng-invalid.ng-touched {
+  border-color: #dc3545;
+}
+
+input.ng-valid.ng-touched,
+select.ng-valid.ng-touched {
+  border-color: #198754;
+}

@@ -1,0 +1,112 @@
+<div class="account-content">
+  <div class="login-wrapper login-new">
+    <div class="row w-100">
+      <div class="col-lg-5 mx-auto">
+        <div class="login-content user-login">
+          <div class="login-logo">
+            <img src="assets/img/logo.png" alt="img" />
+          </div>
+
+          <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+            <div class="card">
+              <div class="card-body p-5">
+                <div class="login-userheading">
+                  <h3>S'inscrire</h3>
+                  <h4>Créer un nouveau compte Kulakwetu</h4>
+                </div>
+
+                <div class="row">
+                  <div class="col mb-3">
+                    <label class="form-label">Prénom <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" formControlName="firstName" />
+                  </div>
+
+                  <div class="col mb-3">
+                    <label class="form-label">Nom <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" formControlName="lastName" />
+                  </div>
+                </div>
+
+               <div class="row">
+                 <div class="col mb-3">
+                   <label class="form-label">Username <span class="text-danger">*</span></label>
+                   <input type="text" class="form-control" formControlName="username" />
+                 </div>
+
+                 <div class="col mb-3">
+                   <label class="form-label">Email</label>
+                   <input type="email" class="form-control" formControlName="email" />
+                 </div>
+               </div>
+
+             <div class="row">
+               <div class="col mb-3">
+                 <label class="form-label">Téléphone (+243...) <span class="text-danger">*</span></label>
+                 <input type="text" class="form-control" formControlName="phoneNumber" />
+               </div>
+
+               <div class="col mb-3">
+                 <label class="form-label">Type de compte <span class="text-danger">*</span></label>
+                 <select class="form-select" formControlName="accountType">
+                   <option value="CONSUMER">Consomateur</option>
+                   <option value="SUPPLIER">Fournisseur</option>
+                   <option value="PRODUCER">Producteur</option>
+                 </select>
+               </div>
+             </div>
+
+                <div class="mb-3">
+                  <label class="form-label d-block">Méthode de confirmation <span class="text-danger">*</span></label>
+                  <div class="d-flex gap-4">
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" id="confirmEmail" value="EMAIL" formControlName="verificationChannel" />
+                      <label class="form-check-label" for="confirmEmail">Par Email</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" id="confirmSms" value="SMS" formControlName="verificationChannel" />
+                      <label class="form-check-label" for="confirmSms">Par Téléphone (SMS)</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Password <span class="text-danger">*</span></label>
+                  <div class="pass-group">
+                    <input [type]="password[1] ? 'text' : 'password'" class="pass-input form-control" formControlName="password" />
+                    <span class="ti toggle-password" [ngClass]="password[1] ? 'ti-eye' : 'ti-eye-off'" (click)="togglePassword(1)"></span>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                  <div class="pass-group">
+                    <input [type]="password[2] ? 'text' : 'password'" class="pass-input form-control" formControlName="confirmPassword" />
+                    <span class="ti toggle-password" [ngClass]="password[2] ? 'ti-eye' : 'ti-eye-off'" (click)="togglePassword(2)"></span>
+                  </div>
+                  <small class="text-danger" *ngIf="passwordMismatch()">Les mots de passe ne correspondent pas.</small>
+                </div>
+
+                <div class="form-check mb-3">
+                  <input id="agree" class="form-check-input" type="checkbox" formControlName="agree" />
+                  <label for="agree" class="form-check-label">J'accepte les conditions générales et la politique de confidentialité</label>
+                </div>
+
+                <div *ngIf="submitError()" class="alert alert-danger py-2">{{ submitError() }}</div>
+                <div *ngIf="submitSuccess()" class="alert alert-success py-2">{{ submitSuccess() }}</div>
+
+                <button type="submit" class="btn btn-primary w-100" [disabled]="loading()">
+                  <span *ngIf="!loading()">S'inscrire</span>
+                  <span *ngIf="loading()" class="spinner-border spinner-border-sm"></span>
+                </button>
+
+                <div class="signinform mt-3">
+                  <h4>Vous avez déjà un compte ? <a routerLink="/login" class="hover-a">Se connecter à la place</a></h4>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
