@@ -5,8 +5,8 @@ import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { BsDatepickerModule } from 'ngx-bootstrap/datepicker';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { provideHttpClient } from '@angular/common/http';
 import { NgxMaskModule } from 'ngx-mask';
+import { provideApiConfig } from './core/config/api.config';
 
 
 
@@ -15,10 +15,10 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     BsDatepickerModule.forRoot().providers!,
     provideAnimations(),
-    provideHttpClient(),
+    ...provideApiConfig(),
     NgxMaskModule.forRoot({
       showMaskTyped: false,
   }).providers!,
-     
+
   ]
 };

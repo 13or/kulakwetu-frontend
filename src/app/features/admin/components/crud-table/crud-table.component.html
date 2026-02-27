@@ -1,0 +1,52 @@
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center gap-2 flex-wrap">
+    <h5 class="card-title mb-0">{{ title }}</h5>
+    <small class="text-muted">{{ totalItems }} total</small>
+  </div>
+  <div class="card-body">
+    @if (errorMessage) {
+    <div class="alert alert-danger">{{ errorMessage }}</div>
+    }
+    @if (isLoading) {
+    <div class="alert alert-info">Loading...</div>
+    }
+
+    <div class="table-responsive">
+      <table class="table table-striped mb-0">
+        <thead>
+        <tr>
+          @for (column of columns; track column.key) {
+          <th>{{ column.label }}</th>
+          }
+        </tr>
+        </thead>
+        <tbody>
+        @for (row of rows; track $index) {
+        <tr>
+          @for (column of columns; track column.key) {
+        <td>{{ row[column.key] ?? '-' }}</td>
+        }
+        </tr>
+        }
+        @if (!isLoading && rows.length === 0) {
+        <tr>
+          <td [attr.colspan]="columns.length" class="text-muted text-center">No data found.</td>
+        </tr>
+        }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card-footer d-flex justify-content-between align-items-center">
+    <small class="text-muted">Page {{ currentPage + 1 }} of {{ totalPages }}</small>
+    <div class="btn-group">
+      <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="!canGoPrev" (click)="prevPage()">
+        Previous
+      </button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="!canGoNext" (click)="nextPage()">
+        Next
+      </button>
+    </div>
+  </div>
+</div>

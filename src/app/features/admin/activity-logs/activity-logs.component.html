@@ -1,0 +1,31 @@
+<div class="card mb-3">
+  <div class="card-header"><h5 class="card-title mb-0">Filters</h5></div>
+  <div class="card-body">
+    <form [formGroup]="filterForm" class="row g-3">
+      <div class="col-md-8">
+        <label class="form-label">Search</label>
+        <input class="form-control" formControlName="query" placeholder="Search by reference, journal id or status" />
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Status</label>
+        <select class="form-select" formControlName="status">
+          <option value="ALL">All</option>
+          <option value="POSTED">Posted</option>
+          <option value="REVERSED">Reversed</option>
+        </select>
+      </div>
+    </form>
+  </div>
+</div>
+
+<app-crud-table
+  title="Activity logs"
+  [columns]="columns"
+  [rows]="pagedRows"
+  [isLoading]="isLoading"
+  [errorMessage]="errorMessage"
+  [currentPage]="page"
+  [pageSize]="size"
+  [totalItems]="totalItems"
+  (pageChange)="onPageChange($event)"
+></app-crud-table>

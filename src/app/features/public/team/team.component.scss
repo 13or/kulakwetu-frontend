@@ -1,0 +1,19 @@
+.team-card {
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.team-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 .5rem 1.25rem rgba(0, 0, 0, .08);
+}
+
+.avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  background: rgba(25, 135, 84, .12);
+  color: #198754;
+}

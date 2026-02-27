@@ -1,0 +1,22 @@
+<!-- NEW FILE: src/app/features/admin/admin-layout/admin-layout.component.html -->
+<div class="card mb-3">
+  <div class="card-header"><h5 class="card-title mb-0">Administration</h5></div>
+  <div class="card-body">
+    <ul class="nav nav-pills flex-wrap gap-2">
+      @for (item of navItems; track item.path) {
+      <li class="nav-item">
+        <a
+          class="nav-link"
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          >
+      {{ item.label }}
+      </a>
+    </li>
+      }
+    </ul>
+  </div>
+</div>
+
+<router-outlet></router-outlet>

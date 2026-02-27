@@ -1,0 +1,31 @@
+<div class="page-wrapper">
+  <div class="content">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <div>
+        <h4 class="mb-1">AGRICASH</h4>
+        <p class="mb-0 text-muted">Wallet, balances, conversion and transactions</p>
+      </div>
+    </div>
+
+    @if (isLoading) {
+    <div class="alert alert-info">Loading Agricash data...</div>
+    }
+
+    @if (errorMessage) {
+    <div class="alert alert-danger">{{ errorMessage }}</div>
+    }
+
+    @if (successMessage) {
+    <div class="alert alert-success">{{ successMessage }}</div>
+    }
+
+    <div class="row g-3">
+      <div class="col-xl-5 col-12">
+        <app-wallet [balances]="balances" [rates]="rates" (submitted)="handleOperation($event)"></app-wallet>
+      </div>
+      <div class="col-xl-7 col-12">
+        <app-transactions [transactions]="transactions"></app-transactions>
+      </div>
+    </div>
+  </div>
+</div>

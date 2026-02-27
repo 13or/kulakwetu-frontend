@@ -1,0 +1,42 @@
+<!-- NEW FILE: src/app/features/admin/system-settings/system-settings.component.html -->
+<div class="card">
+  <div class="card-header"><h5 class="card-title mb-0">System settings</h5></div>
+  <div class="card-body">
+    @if (errorMessage) { <div class="alert alert-danger">{{ errorMessage }}</div> }
+    @if (successMessage) { <div class="alert alert-success">{{ successMessage }}</div> }
+
+    <form [formGroup]="form" class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Legal name</label>
+        <input class="form-control" formControlName="legalName" />
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Trade name</label>
+        <input class="form-control" formControlName="tradeName" />
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Support email</label>
+        <input class="form-control" formControlName="supportEmail" />
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Support phone</label>
+        <input class="form-control" formControlName="supportPhone" />
+      </div>
+      <div class="col-12">
+        <label class="form-label">Website URL</label>
+        <input class="form-control" formControlName="websiteUrl" />
+      </div>
+      <div class="col-12">
+        <label class="form-label">Agrisol description</label>
+        <textarea class="form-control" rows="3" formControlName="agrisolDescription"></textarea>
+      </div>
+      <div class="col-12">
+        <label class="form-label">Agricash description</label>
+        <textarea class="form-control" rows="3" formControlName="agricashDescription"></textarea>
+      </div>
+      <div class="col-12 text-end">
+        <button type="button" class="btn btn-primary" [disabled]="isLoading" (click)="save()">Save settings</button>
+      </div>
+    </form>
+  </div>
+</div>

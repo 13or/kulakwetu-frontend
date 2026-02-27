@@ -1,7 +1,8 @@
+// src/app/auth/register/register-3/register-3.service.ts
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import {environment} from '../../../../environments/environment';
+import { API_ENDPOINTS } from '../../../core/config/api-endpoints';
+import { CoreApiService } from '../../../core/service/core-api.service';
 
 export type AccountType = 'SUPPLIER' | 'PRODUCER' | 'CONSUMER';
 export type VerificationChannel = 'EMAIL' | 'SMS';
@@ -25,10 +26,9 @@ export interface RegisterResponse {
 
 @Injectable({ providedIn: 'root' })
 export class RegisterService {
-  private readonly http = inject(HttpClient);
-  private readonly apiBaseUrl = environment.api.baseUrl;
+  private readonly coreApiService = inject(CoreApiService);
 
   register(payload: RegisterRequest): Observable<RegisterResponse> {
-    return this.http.post<RegisterResponse>(`${this.apiBaseUrl}/auth/register`, payload);
+    return this.coreApiService.post<RegisterResponse, RegisterRequest>(API_ENDPOINTS.auth.register, payload);
   }
 }

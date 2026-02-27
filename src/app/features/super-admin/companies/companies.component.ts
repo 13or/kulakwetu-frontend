@@ -1,4 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
+import { finalize } from 'rxjs';
 import {
   ApexAxisChartSeries,
   ApexChart,
@@ -16,7 +17,9 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { Router } from '@angular/router';
 import { PaginationService, tablePageSize } from '../../../shared/custom-pagination/pagination.service';
 import { MatSortModule, Sort } from '@angular/material/sort';
-import { apiResultFormat, DataService, pageSelection, routes, SidebarService } from '../../../core/core.index';
+import { pageSelection, routes, SidebarService } from '../../../core/core.index';
+import { CompanyApiService } from '../../../core/api/company-api.service';
+import { CompanyDto } from '../../../core/models/company.model';
 import { CompanyAccount } from '../../../shared/model/page.model';
 import { CommonModule } from '@angular/common';
 import { MatSelectModule } from '@angular/material/select';
@@ -47,6 +50,11 @@ export class CompaniesComponent {
   public Areachart4: Partial<ChartOptions> | any;
   public routes = routes;
   initChecked = false;
+  isCollapsed: boolean = false;
+  toggleCollapse() {
+    this.sidebar.toggleCollapse();
+    this.isCollapsed = !this.isCollapsed;
+  }
   // pagination variables
   public pageSize = 10;
   public tableData: CompanyAccount[] = [];
@@ -58,6 +66,8 @@ export class CompaniesComponent {
   public serialNumberArray: number[] = [];
   public totalData = 0;
   showFilter = false;
+  public isLoading = false;
+  public errorMessage = '';
   public pageSelection: pageSelection[] = [];
   dataSource!: MatTableDataSource<CompanyAccount>;
   public searchDataValue = '';
@@ -67,73 +77,101 @@ export class CompaniesComponent {
     this.password[index] = !this.password[index];
   }
   constructor(
-    private data: DataService,
+    private companyApiService: CompanyApiService,
     private router: Router,
     private pagination: PaginationService,
     private sidebar :SidebarService
   ) {
-   
-    this.data.getCompanies().subscribe((apiRes: apiResultFormat) => {
-      this.actualData = apiRes.data;
-      this.pagination.tablePageSize.subscribe((res: tablePageSize) => {
-        if (this.router.url == this.routes.superadminCompanies) {
-          this.getTableData({ skip: res.skip, limit: res.limit });
-          this.pageSize = res.pageSize;
-        }
-      });
+
+    this.pagination.tablePageSize.subscribe((res: tablePageSize) => {
+      if (this.router.url == this.routes.superadminCompanies) {
+        this.pageSize = res.pageSize;
+        this.getTableData({ skip: res.skip, limit: res.limit });
+      }
     });
   }
   private getTableData(pageOption: pageSelection): void {
-    this.data.getCompanies().subscribe((apiRes: apiResultFormat) => {
-      this.tableData = [];
-      this.tableDataCopy = [];
-      this.serialNumberArray = [];
-      this.totalData = apiRes.totalData;
-      apiRes.data.map((res: CompanyAccount, index: number) => {
-        const serialNumber = index + 1;
-        if (index >= pageOption.skip && serialNumber <= pageOption.limit) {
-          res.sNo = serialNumber;
-          this.tableData.push(res);
-          this.tableDataCopy.push(res);
-          this.serialNumberArray.push(serialNumber);
-        }
+    const page = Math.floor(pageOption.skip / this.pageSize);
+
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.companyApiService
+      .list(page, this.pageSize)
+      .pipe(finalize(() => (this.isLoading = false)))
+      .subscribe({
+        next: (response) => {
+          this.tableData = [];
+          this.tableDataCopy = [];
+          this.actualData = [];
+          this.serialNumberArray = [];
+          this.totalData = response.totalElements;
+
+          response.content.forEach((item: CompanyDto, index: number) => {
+            const serialNumber = page * this.pageSize + index + 1;
+            const row: CompanyAccount = {
+              sNo: serialNumber,
+              isSelected: false,
+              CompanyName: item.name,
+              Email: item.email ?? '-',
+              AccountURL: item.accountUrl ?? '-',
+              Plan: item.plan ?? '-',
+              CreatedDate: item.createdAt ?? '-',
+              Image: item.logoUrl ?? 'company-01.svg',
+              Status: item.status ?? 'Active',
+            };
+
+            this.tableData.push(row);
+            this.tableDataCopy.push(row);
+            this.actualData.push(row);
+            this.serialNumberArray.push(serialNumber);
+          });
+
+          this.dataSource = new MatTableDataSource<CompanyAccount>(this.actualData);
+          this.pagination.calculatePageSize.next({
+            totalData: this.totalData,
+            pageSize: this.pageSize,
+            tableData: this.tableData,
+            tableDataCopy: this.tableDataCopy,
+            serialNumberArray: this.serialNumberArray,
+          });
+        },
+        error: (error) => {
+          this.errorMessage = error?.message ?? 'Impossible de charger les entreprises.';
+          this.tableData = [];
+          this.tableDataCopy = [];
+          this.actualData = [];
+          this.dataSource = new MatTableDataSource<CompanyAccount>([]);
+        },
       });
-      this.dataSource = new MatTableDataSource<CompanyAccount>(this.actualData);
+  }
+
+
+
+  public searchData(value: string): void {
+    this.searchDataValue = value.trim().toLowerCase();
+    this.dataSource.filter = this.searchDataValue;
+    this.tableData = this.dataSource.filteredData;
+    this.row = this.tableData.length > 0;
+
+    if (this.searchDataValue !== '') {
+      // Handle filtered data
+      this.pagination.calculatePageSize.next({
+        totalData: this.tableData.length,
+        pageSize: this.pageSize,
+        tableData: this.tableData,
+        serialNumberArray: this.tableData.map((_, i) => i + 1),
+      });
+    } else {
+      // Handle reset to full data
       this.pagination.calculatePageSize.next({
         totalData: this.totalData,
         pageSize: this.pageSize,
         tableData: this.tableData,
-        tableDataCopy: this.tableDataCopy,
         serialNumberArray: this.serialNumberArray,
       });
-    });
+    }
   }
-
- 
-  public searchData(value: string): void {
-   this.searchDataValue = value.trim().toLowerCase();
-   this.dataSource.filter = this.searchDataValue;
-   this.tableData = this.dataSource.filteredData;
-   this.row = this.tableData.length > 0;
- 
-   if (this.searchDataValue !== '') {
-     // Handle filtered data
-     this.pagination.calculatePageSize.next({
-       totalData: this.tableData.length,
-       pageSize: this.pageSize,
-       tableData: this.tableData,
-       serialNumberArray: this.tableData.map((_, i) => i + 1), 
-     });
-   } else {
-     // Handle reset to full data
-     this.pagination.calculatePageSize.next({
-       totalData: this.totalData,
-       pageSize: this.pageSize,
-       tableData: this.tableData,
-       serialNumberArray: this.serialNumberArray,
-     });
-   }
- }
 
   public sortData(sort: Sort) {
     const data = this.tableData.slice();
@@ -149,7 +187,7 @@ export class CompaniesComponent {
       });
     }
   }
-  
+
   public changePageSize(pageSize: number): void {
     this.pageSelection = [];
     this.limit = pageSize;
@@ -477,10 +515,5 @@ export class CompaniesComponent {
         }
       }
     };
-  }
-  isCollapsed: boolean = false;
-  toggleCollapse() {
-    this.sidebar.toggleCollapse();
-    this.isCollapsed = !this.isCollapsed;
   }
 }

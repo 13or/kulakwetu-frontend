@@ -1,0 +1,115 @@
+<div class="page-wrapper">
+  <div class="content">
+    <div class="row">
+      <div class="col-12 d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h4 class="mb-1">User Dashboard</h4>
+          <p class="text-muted mb-0">Vue authentifiée (CONSUMER / SUPPLIER / PRODUCER)</p>
+        </div>
+        <button class="btn btn-outline-danger" type="button" (click)="logout()">Logout</button>
+      </div>
+    </div>
+
+    @if (errorMessage) {
+    <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+    }
+
+    @if (isLoading) {
+    <div class="alert alert-info" role="status">Chargement du dashboard...</div>
+    }
+
+    <div class="row g-3">
+      <div class="col-xl-4 col-lg-6">
+        <div class="card h-100">
+          <div class="card-header"><h5 class="card-title mb-0">User profile</h5></div>
+          <div class="card-body">
+            <p class="mb-1"><strong>Username:</strong> {{ profile?.username || '-' }}</p>
+            <p class="mb-1"><strong>Name:</strong> {{ profile?.firstName || '-' }} {{ profile?.lastName || '' }}</p>
+            <p class="mb-1"><strong>Email:</strong> {{ profile?.email || '-' }}</p>
+            <p class="mb-1"><strong>Phone:</strong> {{ profile?.phoneNumber || '-' }}</p>
+            <p class="mb-0"><strong>Role:</strong> {{ profile?.accountType || '-' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-4 col-lg-6">
+        <div class="card h-100">
+          <div class="card-header"><h5 class="card-title mb-0">Agricash information</h5></div>
+          <div class="card-body">
+            <p class="mb-1"><strong>Wallet:</strong> {{ wallet?.walletId || '-' }}</p>
+            <p class="mb-3"><strong>Status:</strong> {{ wallet?.status || '-' }}</p>
+
+            <h6 class="mb-2">Balances</h6>
+            <ul class="list-group list-group-flush">
+              @for (balance of balances; track balance.currencyCode) {
+              <li class="list-group-item px-0 d-flex justify-content-between">
+                <span>{{ balance.currencyCode }}</span>
+                  <span>{{ balance.availableAmount }}</span>
+                </li>
+              } @empty {
+              <li class="list-group-item px-0 text-muted">No balances available.</li>
+              }
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-4 col-lg-12">
+        <div class="card h-100">
+          <div class="card-header"><h5 class="card-title mb-0">Notifications</h5></div>
+          <div class="card-body">
+            <ul class="list-group list-group-flush">
+              @for (notification of notifications; track notification.id) {
+              <li class="list-group-item px-0">
+                <div class="fw-semibold">{{ notification.title }}</div>
+                  <small class="text-muted">{{ notification.message }}</small>
+                </li>
+              } @empty {
+              <li class="list-group-item px-0 text-muted">No notifications.</li>
+              }
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header"><h5 class="card-title mb-0">Transaction history</h5></div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-striped mb-0">
+                <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Reference type</th>
+                  <th>Reference id</th>
+                  <th>Debit</th>
+                  <th>Credit</th>
+                  <th>Currency</th>
+                </tr>
+                </thead>
+                <tbody>
+                @for (tx of transactions; track tx.journalId) {
+                <tr>
+                  <td>{{ tx.createdAt | date: 'short' }}</td>
+                      <td>{{ tx.referenceType }}</td>
+                      <td>{{ tx.referenceId }}</td>
+                      <td>{{ tx.debit }}</td>
+                      <td>{{ tx.credit }}</td>
+                      <td>{{ tx.currencyCode }}</td>
+                    </tr>
+                } @empty {
+                <tr>
+                  <td colspan="6" class="text-center text-muted">No transactions available.</td>
+                </tr>
+                }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

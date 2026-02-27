@@ -24,10 +24,10 @@ export interface ApiConfig {
 export const API_CONFIG = new InjectionToken<ApiConfig>('API_CONFIG', {
   providedIn: 'root',
   factory: () => ({
-    apiName: environment.api.name,
-    apiBaseUrl: environment.api.baseUrl,
-    timeoutMs: environment.api.timeoutMs,
-    withCredentials: environment.api.withCredentials,
+    apiName: environment.apiName,
+    apiBaseUrl: environment.apiBaseUrl,
+    timeoutMs: environment.apiTimeoutMs,
+    withCredentials: environment.apiWithCredentials,
     defaultLanguage: environment.i18n.defaultLanguage,
     defaultCurrency: environment.currency.defaultCurrency,
     supportedLanguages: environment.i18n.supportedLanguages,
@@ -57,7 +57,7 @@ const apiPrefixInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next
 };
 
 export const provideApiConfig = () => [
-  provideHttpClient(withInterceptors([apiPrefixInterceptor, authInterceptor, errorInterceptor])),
+  provideHttpClient(withInterceptors([apiPrefixInterceptor, errorInterceptor, authInterceptor])),
   provideAppInitializer(() => {
     const config = inject(API_CONFIG);
 

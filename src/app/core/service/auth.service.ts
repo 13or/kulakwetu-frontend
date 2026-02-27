@@ -1,27 +1,42 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, map, tap } from 'rxjs';
-import {environment} from '../../../environments/environment';
+import { BehaviorSubject, Observable, catchError, map, of, tap, throwError } from 'rxjs';
+import { API_ENDPOINTS } from '../config/api-endpoints';
+import { ApiError } from '../models/api-error.model';
+import { AuthStorageService, AuthTokens } from './auth-storage.service';
+import { CoreApiService } from './core-api.service';
 
 export interface LoginRequest {
   identifier: string;
   password: string;
-  rememberMe: boolean;
+  rememberMe?: boolean;
 }
 
-export interface MfaVerifyRequest extends LoginRequest {
-  code: string;
+export interface User {
+  id: string;
+  username?: string;
+  email?: string;
+  phoneNumber?: string;
+  firstName?: string;
+  lastName?: string;
+  roles?: string[];
+  permissions?: string[];
 }
 
 export interface LoginResponse {
-  accessToken: string | null;
-  accessExpiresIn: number;
-  refreshToken: string | null;
-  refreshExpiresIn: number;
-  mfaRequired: boolean;
+  accessToken?: string | null;
+  refreshToken?: string | null;
+  accessExpiresIn?: number;
+  refreshExpiresIn?: number;
+  tokenType?: string;
+  mfaRequired?: boolean;
+  user?: User;
+  tokens?: {
+    accessToken?: string | null;
+    refreshToken?: string | null;
+  };
 }
 
-export interface RefreshRequest {
+interface RefreshRequest {
   refreshToken: string;
 }
 
@@ -44,20 +59,16 @@ export interface JwtClaims {
 
 export interface AuthState {
   isAuthenticated: boolean;
-  accessToken: string | null;
-  refreshToken: string | null;
-  rememberMe: boolean;
+  user: User | null;
   claims: JwtClaims | null;
 }
 
-const STORAGE_KEY = 'kulakwetu_auth';
-
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly http = inject(HttpClient);
-  private readonly apiBaseUrl = environment.api.baseUrl;
+  private readonly coreApiService = inject(CoreApiService);
+  private readonly authStorageService = inject(AuthStorageService);
 
-  private readonly state$ = new BehaviorSubject<AuthState>(this.loadState());
+  private readonly state$ = new BehaviorSubject<AuthState>(this.buildStateFromStorage());
 
   readonly authState$ = this.state$.asObservable();
 
@@ -66,51 +77,60 @@ export class AuthService {
   }
 
   login(payload: LoginRequest): Observable<LoginResponse> {
-    return this.http
-      .post<LoginResponse>(`${this.apiBaseUrl}/auth/login`, payload)
-      .pipe(tap((res) => this.handleLoginResponse(res, payload.rememberMe)));
+    return this.coreApiService
+      .post<LoginResponse, LoginRequest>(API_ENDPOINTS.auth.login, payload)
+      .pipe(tap((res) => this.handleAuthResponse(res, payload.rememberMe ?? false)));
   }
 
-  verifyMfa(payload: MfaVerifyRequest): Observable<LoginResponse> {
-    return this.http
-      .post<LoginResponse>(`${this.apiBaseUrl}/auth/mfa/verify`, payload)
-      .pipe(tap((res) => this.handleLoginResponse(res, payload.rememberMe)));
-  }
-
-  refresh(): Observable<LoginResponse> {
-    const refreshToken = this.authState.refreshToken;
+  refreshToken(): Observable<LoginResponse> {
+    const refreshToken = this.authStorageService.getRefreshToken();
     if (!refreshToken) {
-      throw new Error('No refresh token available');
+      return throwError(() => new Error('No refresh token available'));
     }
 
     const payload: RefreshRequest = { refreshToken };
-    return this.http
-      .post<LoginResponse>(`${this.apiBaseUrl}/auth/refresh`, payload)
-      .pipe(tap((res) => this.handleLoginResponse(res, this.authState.rememberMe)));
+    return this.coreApiService
+      .post<LoginResponse, RefreshRequest>(API_ENDPOINTS.auth.refresh, payload)
+      .pipe(tap((res) => this.handleAuthResponse(res, true)));
   }
 
-  forgotPassword(payload: ForgotPasswordRequest): Observable<string> {
-    return this.http.post(`${this.apiBaseUrl}/auth/forgot-password`, payload, {
-      responseType: 'text',
-    });
+  me(): Observable<User> {
+    return this.coreApiService.get<User>(API_ENDPOINTS.auth.me).pipe(
+      tap((user) => this.patchUser(user)),
+      catchError((error: ApiError) => {
+        if (error.status === 404) {
+          return this.coreApiService.get<User>(API_ENDPOINTS.auth.meFallback).pipe(
+            tap((user) => this.patchUser(user)),
+          );
+        }
+
+        return throwError(() => error);
+      }),
+    );
   }
 
-  resetPassword(payload: ResetPasswordRequest): Observable<void> {
-    return this.http.post<void>(`${this.apiBaseUrl}/auth/reset-password`, payload);
-  }
-
-  logout(): void {
-    this.clearPersistedState();
-    this.state$.next(this.emptyState());
+  logout(): Observable<void> {
+    return this.coreApiService.post<void, Record<string, never>>(API_ENDPOINTS.auth.logout, {}).pipe(
+      tap(() => this.clearAuthState()),
+      catchError((error: ApiError) => {
+        this.clearAuthState();
+        return throwError(() => error);
+      }),
+    );
   }
 
   isAuthenticated(): boolean {
-    const state = this.authState;
-    return !!state.accessToken && !this.isTokenExpired(state.accessToken);
+    const token = this.authStorageService.getAccessToken();
+    return !!token && !this.isTokenExpired(token);
   }
 
   hasRole(role: string): boolean {
-    return this.authState.claims?.roles?.includes(role) ?? false;
+    const normalizedRole = role.trim().toUpperCase();
+    if (!normalizedRole) {
+      return false;
+    }
+
+    return this.getUserRoles().includes(normalizedRole);
   }
 
   hasAnyRole(roles: string[]): boolean {
@@ -118,30 +138,115 @@ export class AuthService {
   }
 
   getAccessToken(): string | null {
-    return this.authState.accessToken;
+    return this.authStorageService.getAccessToken();
   }
 
-  private handleLoginResponse(response: LoginResponse, rememberMe: boolean): void {
-    if (response.mfaRequired || !response.accessToken || !response.refreshToken) {
+  verifyMfa(payload: LoginRequest & { code: string }): Observable<LoginResponse> {
+    return this.coreApiService
+      .post<LoginResponse, LoginRequest & { code: string }>(API_ENDPOINTS.auth.mfaVerify, payload)
+      .pipe(tap((res) => this.handleAuthResponse(res, payload.rememberMe ?? false)));
+  }
+
+  forgotPassword(payload: ForgotPasswordRequest): Observable<string> {
+    return this.coreApiService
+      .post<string, ForgotPasswordRequest>(API_ENDPOINTS.auth.forgotPassword, payload, {
+        headers: {
+          Accept: 'text/plain',
+        },
+      })
+      .pipe(catchError(() => of('Si le compte existe, les instructions ont été envoyées.')));
+  }
+
+  resetPassword(payload: ResetPasswordRequest): Observable<void> {
+    return this.coreApiService.post<void, ResetPasswordRequest>(API_ENDPOINTS.auth.resetPassword, payload);
+  }
+
+  userId$(): Observable<string | null> {
+    return this.authState$.pipe(map((s) => s.claims?.sub ?? s.user?.id ?? null));
+  }
+
+  private getUserRoles(): string[] {
+    const claimRoles = this.authState.claims?.roles ?? [];
+    const userRoles = this.authState.user?.roles ?? [];
+
+    return [...claimRoles, ...userRoles]
+      .map((value) => value.trim().toUpperCase())
+      .filter((value, index, array) => value.length > 0 && array.indexOf(value) === index);
+  }
+
+  private handleAuthResponse(response: LoginResponse, rememberMe: boolean): void {
+    if (response.mfaRequired) {
       return;
     }
 
-    const claims = this.decodeJwt(response.accessToken);
-    const nextState: AuthState = {
-      isAuthenticated: true,
-      accessToken: response.accessToken,
-      refreshToken: response.refreshToken,
-      rememberMe,
-      claims,
-    };
+    const tokens = this.extractTokens(response);
+    if (!tokens) {
+      return;
+    }
 
-    this.persistState(nextState);
-    this.state$.next(nextState);
+    const claims = this.decodeJwt(tokens.accessToken);
+
+    this.authStorageService.setTokens(tokens, rememberMe);
+    this.state$.next({
+      isAuthenticated: true,
+      user: response.user ?? this.authState.user,
+      claims,
+    });
+  }
+
+  private extractTokens(response: LoginResponse): AuthTokens | null {
+    const accessToken = response.accessToken ?? response.tokens?.accessToken ?? null;
+    const refreshToken = response.refreshToken ?? response.tokens?.refreshToken ?? null;
+
+    if (!accessToken || !refreshToken) {
+      return null;
+    }
+
+    return { accessToken, refreshToken };
+  }
+
+  private patchUser(user: User): void {
+    this.state$.next({
+      ...this.authState,
+      user,
+      isAuthenticated: this.isAuthenticated(),
+    });
+  }
+
+  private clearAuthState(): void {
+    this.authStorageService.clear();
+    this.state$.next({
+      isAuthenticated: false,
+      user: null,
+      claims: null,
+    });
+  }
+
+  private buildStateFromStorage(): AuthState {
+    const accessToken = this.authStorageService.getAccessToken();
+
+    if (!accessToken || this.isTokenExpired(accessToken)) {
+      this.authStorageService.clear();
+      return {
+        isAuthenticated: false,
+        user: null,
+        claims: null,
+      };
+    }
+
+    return {
+      isAuthenticated: true,
+      user: null,
+      claims: this.decodeJwt(accessToken),
+    };
   }
 
   private isTokenExpired(token: string): boolean {
     const claims = this.decodeJwt(token);
-    if (!claims?.exp) return false;
+    if (!claims?.exp) {
+      return false;
+    }
+
     return claims.exp * 1000 <= Date.now();
   }
 
@@ -153,56 +258,12 @@ export class AuthService {
         atob(base64)
           .split('')
           .map((c) => `%${`00${c.charCodeAt(0).toString(16)}`.slice(-2)}`)
-          .join('')
+          .join(''),
       );
+
       return JSON.parse(json) as JwtClaims;
     } catch {
       return null;
     }
-  }
-
-  private loadState(): AuthState {
-    const fromLocal = localStorage.getItem(STORAGE_KEY);
-    const fromSession = sessionStorage.getItem(STORAGE_KEY);
-    const raw = fromLocal ?? fromSession;
-
-    if (!raw) return this.emptyState();
-
-    try {
-      const parsed = JSON.parse(raw) as AuthState;
-      if (!parsed.accessToken || this.isTokenExpired(parsed.accessToken)) {
-        this.clearPersistedState();
-        return this.emptyState();
-      }
-      return parsed;
-    } catch {
-      this.clearPersistedState();
-      return this.emptyState();
-    }
-  }
-
-  private persistState(state: AuthState): void {
-    this.clearPersistedState();
-    const target = state.rememberMe ? localStorage : sessionStorage;
-    target.setItem(STORAGE_KEY, JSON.stringify(state));
-  }
-
-  private clearPersistedState(): void {
-    localStorage.removeItem(STORAGE_KEY);
-    sessionStorage.removeItem(STORAGE_KEY);
-  }
-
-  private emptyState(): AuthState {
-    return {
-      isAuthenticated: false,
-      accessToken: null,
-      refreshToken: null,
-      rememberMe: false,
-      claims: null,
-    };
-  }
-
-  userId$(): Observable<string | null> {
-    return this.authState$.pipe(map((s) => s.claims?.sub ?? null));
   }
 }

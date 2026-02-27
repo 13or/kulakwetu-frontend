@@ -1,0 +1,44 @@
+<div class="card mb-3">
+  <div class="card-header"><h5 class="card-title mb-0">Create currency</h5></div>
+  <div class="card-body">
+    <form [formGroup]="form" class="row g-3">
+      <div class="col-md-2">
+        <label class="form-label">Code</label>
+        <input class="form-control" formControlName="code" maxlength="3" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Name</label>
+        <input class="form-control" formControlName="name" />
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Symbol</label>
+        <input class="form-control" formControlName="symbol" />
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Decimals</label>
+        <input type="number" class="form-control" formControlName="decimals" />
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" formControlName="isActive" id="activeCurrency" />
+          <label class="form-check-label" for="activeCurrency">Active</label>
+        </div>
+      </div>
+      <div class="col-md-1 d-flex align-items-end justify-content-end">
+        <button type="button" class="btn btn-primary" (click)="create()">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<app-crud-table
+  title="Currency management"
+  [columns]="columns"
+  [rows]="rows"
+  [isLoading]="isLoading"
+  [errorMessage]="errorMessage"
+  [currentPage]="page"
+  [pageSize]="size"
+  [totalItems]="totalItems"
+  (pageChange)="onPageChange($event)"
+></app-crud-table>

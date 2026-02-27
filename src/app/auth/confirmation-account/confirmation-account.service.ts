@@ -1,7 +1,8 @@
+// src/app/auth/confirmation-account/confirmation-account.service.ts
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import {environment} from '../../../environments/environment';
+import { API_ENDPOINTS } from '../../core/config/api-endpoints';
+import { CoreApiService } from '../../core/service/core-api.service';
 
 export interface VerifyAccountRequest {
   token: string;
@@ -9,11 +10,10 @@ export interface VerifyAccountRequest {
 
 @Injectable({ providedIn: 'root' })
 export class ConfirmationAccountService {
-  private readonly http = inject(HttpClient);
-  private readonly apiBaseUrl = environment.api.baseUrl;
+  private readonly coreApiService = inject(CoreApiService);
 
   verifyAccount(payload: VerifyAccountRequest): Observable<void> {
-    return this.http.post<void>(`${this.apiBaseUrl}/auth/verify`, payload);
+    return this.coreApiService.post<void, VerifyAccountRequest>(API_ENDPOINTS.auth.verify, payload);
   }
 
   verifySmsCode(code: string): Observable<void> {

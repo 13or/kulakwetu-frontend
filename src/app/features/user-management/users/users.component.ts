@@ -1,13 +1,15 @@
+// src/app/features/user-management/users/users.component.ts
 import { Component } from '@angular/core';
+import { finalize } from 'rxjs';
 import { Sort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { Router } from '@angular/router';
 import {
-  DataService,
   pageSelection,
-  apiResultFormat,
   SidebarService,
 } from '../../../core/core.index';
+import { UserApiService } from '../../../core/api/user-api.service';
+import { UserDto } from '../../../core/models/user.model';
 import { routes } from '../../../core/helpers/routes';
 import { users } from '../../../shared/model/page.model';
 import { PaginationService, tablePageSize } from '../../../shared/custom-pagination/pagination.service';
@@ -17,10 +19,11 @@ import { FormsModule } from '@angular/forms';
 import { MatSortModule } from '@angular/material/sort';
 import { CommonModule } from '@angular/common';
 @Component({
-    selector: 'app-users',
-    templateUrl: './users.component.html',
-    styleUrl: './users.component.scss',
-    imports: [MatSelectModule,CustomPaginationComponent,FormsModule,MatSortModule,CommonModule]
+  selector: 'app-users',
+  standalone: true,
+  templateUrl: './users.component.html',
+  styleUrl: './users.component.scss',
+  imports: [MatSelectModule,CustomPaginationComponent,FormsModule,MatSortModule,CommonModule]
 })
 export class UsersComponent {
   initChecked = false;
@@ -42,47 +45,74 @@ export class UsersComponent {
   dataSource!: MatTableDataSource<users>;
   public searchDataValue = '';
   public row=true;
+  public isLoading = false;
+  public errorMessage = '';
   //** / pagination variables
 
   constructor(
-    private data: DataService,
+    private userApiService: UserApiService,
     private pagination: PaginationService,
     private router: Router,
     private sidebar: SidebarService
   ) {
-    this.data.getDataTable().subscribe((apiRes: apiResultFormat) => {
-      this.totalData = apiRes.totalData;
-      this.pagination.tablePageSize.subscribe((res: tablePageSize) => {
-        if (this.router.url == this.routes.users) {
-          this.getTableData({ skip: res.skip, limit: this.totalData  });
-          this.pageSize = res.pageSize;
-        }
-      });
+    this.pagination.tablePageSize.subscribe((res: tablePageSize) => {
+      if (this.router.url == this.routes.users) {
+        this.pageSize = res.pageSize;
+        this.getTableData({ skip: res.skip, limit: res.limit });
+      }
     });
   }
 
   private getTableData(pageOption: pageSelection): void {
-    this.data.getUsers().subscribe((apiRes: apiResultFormat) => {
-      this.tableData = [];
-      this.serialNumberArray = [];
-      this.totalData = apiRes.totalData;
-      apiRes.data.map((res: users, index: number) => {
-        const serialNumber = index + 1;
-        if (index >= pageOption.skip && serialNumber <= pageOption.limit) {
-          res.sNo = serialNumber;
-          this.tableData.push(res);
-          this.serialNumberArray.push(serialNumber);
-        }
+    const page = Math.floor(pageOption.skip / this.pageSize);
+
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.userApiService
+      .list(page, this.pageSize)
+      .pipe(finalize(() => (this.isLoading = false)))
+      .subscribe({
+        next: (response) => {
+          this.tableData = [];
+          this.serialNumberArray = [];
+          this.totalData = response.totalElements;
+
+          response.content.forEach((item: UserDto, index: number) => {
+            const serialNumber = page * this.pageSize + index + 1;
+            const row: users = {
+              sNo: serialNumber,
+              img: 'user-01.jpg',
+              userName: item.username || `${item.firstName ?? ''} ${item.lastName ?? ''}`.trim() || 'N/A',
+              phone: item.phoneNumber ?? '-',
+              email: item.email ?? '-',
+              role: (item.role ?? item.roles?.[0] ?? 'CONSUMER').toUpperCase(),
+              createdOn: item.createdAt ?? '-',
+              status: item.status ?? 'Active',
+              isSelected: false,
+            };
+
+            this.tableData.push(row);
+            this.serialNumberArray.push(serialNumber);
+          });
+
+          this.dataSource = new MatTableDataSource<users>(this.tableData);
+          this.pagination.calculatePageSize.next({
+            totalData: this.totalData,
+            pageSize: this.pageSize,
+            tableData: this.tableData,
+            serialNumberArray: this.serialNumberArray,
+          });
+        },
+        error: (error) => {
+          this.errorMessage = error?.message ?? 'Impossible de charger les utilisateurs.';
+          this.tableData = [];
+          this.dataSource = new MatTableDataSource<users>([]);
+          this.row = false;
+        },
       });
-      this.dataSource = new MatTableDataSource<users>(this.tableData);
-      this.pagination.calculatePageSize.next({
-        totalData: this.totalData,
-        pageSize: this.pageSize,
-        tableData: this.tableData,
-        serialNumberArray: this.serialNumberArray,
-      });
-    });
   }
+
 
   public sortData(sort: Sort) {
     const data = this.tableData.slice();
@@ -102,7 +132,7 @@ export class UsersComponent {
     this.dataSource.filter = this.searchDataValue;
     this.tableData = this.dataSource.filteredData;
     this.row = this.tableData.length > 0;
-  
+
     if (this.searchDataValue !== '') {
       // Handle filtered data
       this.pagination.calculatePageSize.next({

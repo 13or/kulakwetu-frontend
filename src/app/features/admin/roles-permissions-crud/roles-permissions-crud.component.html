@@ -1,0 +1,10 @@
+<div class="mb-3">
+  <input type="text" class="form-control" [(ngModel)]="filter" placeholder="Filter role or permission..." />
+</div>
+
+<app-crud-table
+  title="Roles & permissions management"
+  [columns]="columns"
+  [rows]="filteredRows"
+  [totalItems]="filteredRows.length"
+></app-crud-table>

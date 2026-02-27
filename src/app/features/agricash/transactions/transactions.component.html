@@ -1,0 +1,41 @@
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="card-title mb-0">Transaction history</h5>
+    <span class="badge bg-info-subtle text-info-emphasis">Chart-ready structure</span>
+  </div>
+  <div class="card-body">
+    <div class="chart-placeholder border rounded p-3 mb-3 text-muted">
+      Chart placeholder (future integration): transaction volume by day / currency distribution.
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-striped mb-0">
+        <thead>
+        <tr>
+          <th>Date</th>
+          <th>Reference</th>
+          <th>Debit</th>
+          <th>Credit</th>
+          <th>Currency</th>
+        </tr>
+        </thead>
+        <tbody>
+        @for (tx of transactions; track tx.journalId) {
+        <tr>
+          <td>{{ tx.createdAt | date:'short' }}</td>
+              <td>{{ tx.referenceType }} / {{ tx.referenceId }}</td>
+              <td>{{ tx.debit | agricashCurrency:tx.currencyCode }}</td>
+              <td>{{ tx.credit | agricashCurrency:tx.currencyCode }}</td>
+              <td>{{ tx.currencyCode }}</td>
+            </tr>
+        }
+        @if (transactions.length === 0) {
+        <tr>
+          <td colspan="5" class="text-center text-muted">No transaction available.</td>
+        </tr>
+        }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

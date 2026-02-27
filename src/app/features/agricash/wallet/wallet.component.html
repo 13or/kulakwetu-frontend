@@ -1,0 +1,80 @@
+<div class="card h-100">
+  <div class="card-header">
+    <h5 class="card-title mb-0">Multi-currency wallet</h5>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive mb-3">
+      <table class="table table-sm mb-0">
+        <thead>
+        <tr>
+          <th>Currency</th>
+          <th>Available</th>
+          <th>Reserved</th>
+          <th>Converted</th>
+        </tr>
+        </thead>
+        <tbody>
+        @for (balance of convertedBalances(); track balance.currencyCode) {
+        <tr>
+          <td>{{ balance.currencyCode }}</td>
+              <td>{{ balance.availableAmount | agricashCurrency:balance.currencyCode }}</td>
+              <td>{{ balance.reservedAmount | agricashCurrency:balance.currencyCode }}</td>
+              <td>{{ balance.convertedAmount | agricashCurrency:operationForm.controls.currencyCode.value }}</td>
+            </tr>
+        }
+        @if (convertedBalances().length === 0) {
+        <tr>
+          <td colspan="4" class="text-muted">No balances yet.</td>
+        </tr>
+        }
+        </tbody>
+      </table>
+    </div>
+
+    @if (step() === 1) {
+    <form [formGroup]="operationForm" class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Operation</label>
+        <select class="form-select" formControlName="type">
+          <option value="DEPOSIT">Deposit</option>
+          <option value="WITHDRAW">Withdraw</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Amount</label>
+        <input type="number" class="form-control" formControlName="amount" min="0" step="0.01" />
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Currency</label>
+        <select class="form-select" formControlName="currencyCode">
+          @for (balance of balances; track balance.currencyCode) {
+    <option [value]="balance.currencyCode">{{ balance.currencyCode }}</option>
+    }
+    @if (balances.length === 0) {
+    <option value="USD">USD</option>
+    }
+    </select>
+  </div>
+  <div class="col-12 d-flex justify-content-end">
+    <button type="button" class="btn btn-primary" (click)="nextStep()">Continue</button>
+  </div>
+</form>
+    }
+
+    @if (step() === 2) {
+    <div class="alert alert-warning">
+      Security confirmation required. Enter the 6-digit confirmation code to validate this operation.
+    </div>
+    <form [formGroup]="confirmationForm" class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Confirmation code</label>
+        <input type="text" class="form-control" formControlName="confirmationCode" maxlength="6" />
+      </div>
+      <div class="col-12 d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" (click)="previousStep()">Back</button>
+        <button type="button" class="btn btn-success" (click)="submit()">Confirm</button>
+      </div>
+    </form>
+    }
+  </div>
+</div>

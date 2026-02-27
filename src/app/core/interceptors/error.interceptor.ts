@@ -1,16 +1,20 @@
+// src/app/core/interceptors/error.interceptor.ts
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
+import { normalizeApiError } from '../helpers/normalize-api-error';
+import { AuthStorageService } from '../service/auth-storage.service';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
+  const authStorageService = inject(AuthStorageService);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401) {
-        localStorage.removeItem('auth.accessToken');
-        void router.navigate(['/auth/login'], {
+        authStorageService.clear();
+        void router.navigate(['/login'], {
           queryParams: { returnUrl: router.url },
         });
       }
@@ -26,16 +30,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         });
       }
 
-      const normalizedError = {
-        status: error.status,
-        url: error.url ?? req.url,
-        message:
-          (error.error && (error.error.message || error.error.error)) ||
-          error.message ||
-          'Une erreur inattendue est survenue.',
-        details: error.error,
-      };
-
+      const normalizedError = normalizeApiError(error);
       return throwError(() => normalizedError);
     }),
   );

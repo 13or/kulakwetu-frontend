@@ -1,15 +1,13 @@
-export const environmentProd = {
+export const environment = {
   production: true,
   appName: 'kulakwetu-frontend',
-  api: {
-    name: 'kulakwetu-api',
-    baseUrl: 'https://api.kulakwetu.com/api',
-    timeoutMs: 30000,
-    withCredentials: false,
-    cors: {
-      enabled: true,
-      allowedOrigins: ['https://app.kulakwetu.com'],
-    },
+  apiBaseUrl: 'https://api.kulakwetu.com/api',
+  apiName: 'kulakwetu-api',
+  apiTimeoutMs: 30000,
+  apiWithCredentials: false,
+  cors: {
+    enabled: true,
+    allowedOrigins: ['https://app.kulakwetu.com'],
   },
   i18n: {
     defaultLanguage: 'fr',
@@ -19,4 +17,4 @@ export const environmentProd = {
     defaultCurrency: 'CDF',
     supportedCurrencies: ['KES', 'CDF', 'USD'],
   },
-};
+} as const;
